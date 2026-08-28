@@ -5,7 +5,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.database.models import Service
-from app.utils.format import format_date_ru, format_price, format_time
+from app.utils.format import encode_slot_callback, format_date_ru, format_price, format_time
 
 
 class ServiceCallback(CallbackData, prefix="svc"):
@@ -62,7 +62,7 @@ def slots_keyboard(slots: list[datetime]) -> InlineKeyboardMarkup:
         row.append(
             InlineKeyboardButton(
                 text=format_time(slot),
-                callback_data=SlotCallback(hhmm=slot.strftime("%H:%M")).pack(),
+                callback_data=SlotCallback(hhmm=encode_slot_callback(slot)).pack(),
             )
         )
         if len(row) == 3:

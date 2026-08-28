@@ -89,6 +89,19 @@ def format_time(value: time | datetime) -> str:
     return value.strftime("%H:%M")
 
 
+def encode_slot_callback(value: time | datetime) -> str:
+    """Callback-safe HHMM without ':' (Telegram CallbackData separator)."""
+    return format_time(value).replace(":", "")
+
+
+def decode_slot_callback(raw: str) -> str:
+    """Convert callback HHMM back to display form HH:MM."""
+    text = raw.strip()
+    if len(text) == 4 and text.isdigit():
+        return f"{text[:2]}:{text[2:]}"
+    raise ValueError("Некорректное время слота")
+
+
 def format_dt_local(value: datetime, tz: ZoneInfo) -> str:
     local = value.astimezone(tz)
     return f"{format_date_ru(local.date())} {local.strftime('%H:%M')}"

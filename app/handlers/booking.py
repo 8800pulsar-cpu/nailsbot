@@ -30,7 +30,7 @@ from app.services.booking_service import (
 )
 from app.services.client_service import ClientService
 from app.states.booking import BookingStates
-from app.utils.format import format_price, master_tz
+from app.utils.format import decode_slot_callback, format_price, master_tz
 
 logger = logging.getLogger(__name__)
 router = Router(name="booking")
@@ -193,20 +193,26 @@ async def choose_slot(
         await callback.message.answer("Данные записи устарели. Начните заново.")
         await state.clear()
         return
-    hour, minute = map(int, callback_data.hhmm.split(":"))
+    try:
+        hhmm = decode_slot_callback(callback_data.hhmm)
+        hour, minute = map(int, hhmm.split(":"))
+    except ValueError:
+        await callback.message.answer("Данные записи устарели. Начните заново.")
+        await state.clear()
+        return
     tz = master_tz(master)
     start = datetime.combine(day, time(hour, minute), tzinfo=tz)
     slots = await booking_service.list_available_slots(master, service, day)
     if start not in slots:
         await callback.message.answer("Это время уже недоступно. Выберите другое.")
         return
-    await state.update_data(hhmm=callback_data.hhmm)
+    await state.update_data(hhmm=hhmm)
     await state.set_state(BookingStates.confirming)
     text = (
         "Проверьте запись:\n\n"
         f"💅 {service.name}\n"
         f"📅 {day.strftime('%d.%m.%Y')}\n"
-        f"🕒 {callback_data.hhmm}\n"
+        f"🕒 {hhmm}\n"
         f"💰 {format_price(service.price)}"
     )
     await callback.message.answer(text, reply_markup=confirm_keyboard())
